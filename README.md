@@ -2,9 +2,9 @@
 
 A small dock above the Claude Code prompt, in one row: a pixel pet, your context window as a stacked bar, and your usage limits as two rings.
 
-```
- [pet]  [ context window bar ............................ ]  [rings]
-```
+![The dock above the prompt: the pixel pet on the left, the context bar in the middle, the two usage rings on the right](docs/dock.svg)
+
+The pet and the rings are drawn by the plugins' own code; the numbers in the context bar are sample values.
 
 Each part is its own plugin, so you can take one, two or all three. `/dock` shows or hides them together or one at a time.
 
@@ -78,6 +78,10 @@ claude plugin uninstall status-ring@mini-dock
 claude plugin uninstall context-bar@mini-dock
 claude plugin marketplace remove mini-dock
 ```
+
+## Development
+
+Each plugin has tests: `claude plugin test mods/<name>`. The pictures in `docs/` are rendered from the plugins' code with `bun scripts/render-docs.ts`.
 
 ## Credits and licences
 

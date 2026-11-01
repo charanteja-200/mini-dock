@@ -17,6 +17,10 @@ An unofficial fan project, not affiliated with or endorsed by Anthropic.
 
 The critter changes colour, face and props with the state of the session.
 
+![The twelve moods of the pixel pet, each labelled](../../docs/moods.svg)
+
+Rendered from the plugin's own sprite code at the size it is drawn in the terminal, 16 by 7 pixels.
+
 | Mood | Colour | What it means | What triggers it |
 | --- | --- | --- | --- |
 | idle | orange | Nothing is happening | A session starts, a turn is stopped, or a compaction finishes. It falls asleep after 45 seconds. |
