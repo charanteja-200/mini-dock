@@ -1,0 +1,14 @@
+{
+  "name": "dock",
+  "version": "0.1.0",
+  "description": "One command, /dock, to show or hide the pixel pet, the context bar and the status ring together or one at a time. Installing it installs all three.",
+  "author": {
+    "name": "Charan Teja",
+    "url": "https://github.com/charanteja-200"
+  },
+  "homepage": "https://github.com/charanteja-200/mini-dock",
+  "license": "MIT",
+  "dependencies": [
+    "pixel-pet@mini-dock"
+  ]
+}

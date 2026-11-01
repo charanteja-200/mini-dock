@@ -1,0 +1,3 @@
+node_modules/
+# The engine lays its type files here when a mod loads; they are rebuilt, not kept.
+.claude-plugin/types/

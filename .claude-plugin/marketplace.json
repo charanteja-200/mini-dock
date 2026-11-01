@@ -1,0 +1,33 @@
+{
+  "name": "mini-dock",
+  "description": "A small dock above the Claude Code prompt: a pixel pet, a context window bar and usage rings.",
+  "owner": {
+    "name": "Charan Teja"
+  },
+  "plugins": [
+    {
+      "name": "dock",
+      "description": "/dock shows or hides the pet, the context bar and the usage rings together or one at a time; installs all three.",
+      "version": "0.1.0",
+      "source": "./mods/dock"
+    },
+    {
+      "name": "pixel-pet",
+      "description": "A tiny pixel critter that reacts to your session, drawn above the prompt.",
+      "version": "0.3.0",
+      "source": "./mods/pixel-pet"
+    },
+    {
+      "name": "context-bar",
+      "description": "Your context window as a stacked bar above the prompt.",
+      "version": "0.1.2",
+      "source": "./mods/context-bar"
+    },
+    {
+      "name": "status-ring",
+      "description": "Your 5-hour and weekly usage limits as two rings beside the context bar.",
+      "version": "0.5.9",
+      "source": "./mods/status-ring"
+    }
+  ]
+}

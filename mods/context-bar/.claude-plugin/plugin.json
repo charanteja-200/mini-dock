@@ -1,0 +1,12 @@
+{
+  "name": "context-bar",
+  "version": "0.1.2",
+  "description": "Your context window as a stacked bar above the prompt, a color per category, with token counts and the compaction point. /context-bar shows or hides it. A modified copy of hamzafer/claude-code-mods context-bar (MIT).",
+  "author": {
+    "name": "Hamza Zafar",
+    "url": "https://github.com/hamzafer"
+  },
+  "homepage": "https://github.com/charanteja-200/mini-dock",
+  "license": "MIT",
+  "types": "./types/index.d.ts"
+}
