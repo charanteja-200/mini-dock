@@ -1,8 +1,19 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { fillColor, label, paceColor, rings } from '../hooks/rings'
+import { fillColor, label, paceColor, resetLabel, rings } from '../hooks/rings'
 
 describe('rings', () => {
+  test('when a window resets, in local time', () => {
+    const at = (day: number, hour: number, minute: number) => new Date(2026, 10, day, hour, minute).getTime() // 13 November 2026 is a Friday, in whatever zone this runs
+    const now = at(13, 12, 0)
+    expect(resetLabel(at(13, 14, 30), now)).toBe('2:30 PM') // today: the time alone
+    expect(resetLabel(at(13, 23, 59), now)).toBe('11:59 PM')
+    expect(resetLabel(at(14, 0, 5), now)).toBe('Sat 12:05 AM') // another day: with the weekday
+    expect(resetLabel(at(16, 2, 30), now)).toBe('Mon 2:30 AM') // the weekly reset
+    expect(resetLabel(at(13, 12, 0), now)).toBeUndefined() // reached or past: the figures are about to change
+    expect(resetLabel(at(13, 9, 0), now)).toBeUndefined()
+  })
+
   test('rings', () => {
     expect([fillColor(10), fillColor(50), fillColor(80)]).toEqual(['#4ade80', '#fbbf24', '#fb7185'])
     const rows = rings(37, 72)

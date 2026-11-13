@@ -160,6 +160,32 @@ describe('dock: the row', () => {
     await b.unmount()
   })
 
+  test('hovering a ring says when its window resets', async ($, on) => {
+    const at = (day: number, hour: number, minute: number) => new Date(2026, 10, day, hour, minute).getTime()
+    engine(on, {
+      now: at(13, 12, 0),
+      rateLimits: [
+        { kind: 'five_hour', percentUsed: 32, resetsAt: new Date(at(13, 14, 30)).toISOString() },
+        { kind: 'seven_day', percentUsed: 40, resetsAt: new Date(at(16, 2, 30)).toISOString() },
+      ],
+    })
+    await start($)
+    const b = await $.ui.mount(band(120))
+    const cards = (await b.findAll({ type: 'Text', text: /^resets / })).map((x: any) => x.text)
+    expect(cards.sort()).toEqual(['resets 2:30 PM', 'resets Mon 2:30 AM'])
+    const card = (await b.findAll({ type: 'Box' })).find((x: any) => x.text === 'resets 2:30 PM')!
+    expect(card.props).toMatchObject({ position: 'absolute', left: -16, width: 16, display: 'none' }) // just left of the ring, and hidden until the pointer is on it
+    await b.unmount()
+  })
+
+  test('with no reset time there is no card', async ($, on) => {
+    engine(on, { rateLimits: [{ kind: 'five_hour', percentUsed: 32 }, { kind: 'seven_day', percentUsed: 40 }] })
+    await start($)
+    const b = await $.ui.mount(band(120))
+    expect(await has(b, { type: 'Text', text: /^resets / })).toBe(false)
+    await b.unmount()
+  })
+
   test('a new reading of the limits moves the rings', async ($, on) => {
     engine(on)
     await start($)

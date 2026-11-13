@@ -19,6 +19,15 @@ export function fillColor(percent: number) {
   return percent >= 80 ? '#fb7185' : percent >= 50 ? '#fbbf24' : '#4ade80'
 }
 
+// When a window resets, in the viewer's time: "2:30 PM" if that is today, "Mon 2:30 AM" on another day.
+// Undefined once it has passed, when the figures are about to change.
+export function resetLabel(resetsAt: number, now: number) {
+  if (!(resetsAt > now)) return undefined
+  const at = new Date(resetsAt)
+  const time = at.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/ /g, ' ') // newer engines put a narrow space before AM and PM
+  return at.toDateString() === new Date(now).toDateString() ? time : `${at.toLocaleDateString('en-US', { weekday: 'short' })} ${time}`
+}
+
 const WEEK = 7 * 24 * 60 * 60 * 1000
 export const WEEKLY_TARGET = 98 // the week should end at or under this percent
 const GRACE = 2 // points over pace still green, so the first hours of a week stay calm

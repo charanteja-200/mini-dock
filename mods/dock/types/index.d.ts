@@ -10,6 +10,7 @@ export type Reading = {
 
 export type Limits = {
   fiveHour: number // percent of the 5-hour window used, 0 to 100
+  fiveHourResetsAt?: number // when the 5-hour window resets, in ms
   weekly: number // percent of the weekly window used, 0 to 100
   weeklyResetsAt?: number // when the weekly window resets, in ms; absent, the inner ring colours by fill
 }

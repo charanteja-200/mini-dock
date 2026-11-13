@@ -1,6 +1,6 @@
 {
   "name": "dock",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A dock above the prompt: a pixel pet, the context bar and the usage rings in one row, drawn by one plugin. /dock shows or hides them together or one at a time.",
   "author": {
     "name": "Charan Teja",
