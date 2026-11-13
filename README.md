@@ -60,7 +60,7 @@ The choice is remembered across sessions. A part that is not installed is skippe
 
 ## How the row fits together
 
-The pet lays the other two out in the width it leaves and centres them against itself. The ring sits beside the bar, centred against it. The bar's legend drops free space and the compaction buffer when they would wrap onto a second line, so the bar stays the same height as the ring.
+The pet and the ring are fixed-width blocks; the bar takes whatever width is left between them (it is laid out by flex, so nothing has to tell it how wide that is). The pet centres the other two against itself, and the ring sits beside the bar, centred against it. The legend lists only the used categories and wraps as the width requires, so on a narrow terminal the bar grows taller than the ring.
 
 ## Requirements and limits
 

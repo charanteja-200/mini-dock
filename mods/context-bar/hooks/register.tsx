@@ -8,14 +8,13 @@ import type { EngineInterface, Register } from 'claude-code'
 
 import type { Reading, Slice } from '../types'
 
-const MIN_WIDTH = 20 // narrower than this, the bar is not drawn
-const SPLIT = '   '
+const MIN_WIDTH = 24 // a band narrower than this draws no bar
 // /context's theme gives several rows the same grey, so each used row gets its own color, in order.
 const PALETTE = ['#7aa2f7', '#7dcfff', '#bb9af7', '#9ece6a', '#e0af68', '#f7768e', '#73daca', '#ff9e64', '#c0caf5']
 const MESSAGES = '#d97757' // the row that grows, in the accent color
 const FREE = '#808080' // a mid grey thin line reads as empty on dark and light themes alike
 const BUFFER = '#808080'
-const GLYPH = { used: '█', free: ' ', buffer: '░' } as const // free space is left blank: no empty-state line
+const GLYPH = { used: '█', buffer: '░' } as const // free space is left blank: no empty-state line
 
 // Held by the host, so the bar survives a hot reload of this file.
 const reading = atom({ plugin: 'context-bar', key: 'reading' } as const, null as Reading | null)
@@ -59,9 +58,10 @@ export const register: Register = on => {
     const rest = await next(e) // what other mods and Claude Code draw here stays
     const r = await read($, reading)
     if (e.props.hasSurvey || (await read($, isHidden)) || !r) return rest
+    if (e.props.bodyColumns < MIN_WIDTH) return rest
     const { Box, Text } = $.ui.resolve(e)
-    const inner = e.props.bodyColumns - 4 // the border and padding take 4 cells
-    if (inner < MIN_WIDTH) return rest
+    // Claude Code no longer lets a hook narrow bodyColumns for the hooks beneath it, so beside the pet and the
+    // ring this band cannot be told its width: the bar and the legend lay themselves out in what they are given.
 
     const head = `${tokens(r.total)} of ${tokens(r.window)}${r.compactsAt ? ` · compacts at ${tokens(r.compactsAt)}` : ''}`
     const pct = ` ${r.percent}% `
@@ -79,24 +79,31 @@ export const register: Register = on => {
               <Text bold color="black" backgroundColor={level >= 0.9 ? 'red' : level >= 0.7 ? 'yellow' : 'green'}>{pct}</Text>
             </Text>
           </Box>
-          <Text>
-            {cells(r, inner).map(c => (
-              <Text color={c.color}>{c.text}</Text>
+          <Box height={1}>
+            {r.slices.map(s => (
+              <Box width={0} flexGrow={Math.round((s.tokens / r.window) * 10_000)} minWidth={s.kind === 'used' ? 1 : 0} overflow="hidden">
+                {s.kind !== 'free' && (
+                  <Box width={e.props.bodyColumns} flexShrink={0}>
+                    <Text color={s.color}>{GLYPH[s.kind].repeat(e.props.bodyColumns)}</Text>
+                  </Box>
+                )}
+              </Box>
             ))}
-          </Text>
-          {lines(r, inner).map(line => (
-            <Text wrap="truncate-end">
-              {line.map((s, i) => (
-                <Text>
-                  {i > 0 && <Text>{SPLIT}</Text>}
-                  <Text color={s.color}>{s.kind === 'used' ? '■ ' : `${GLYPH[s.kind]} `}</Text>
-                  <Text dimColor={s.kind !== 'used'}>{`${s.name} `}</Text>
-                  <Text bold={s.kind === 'used'}>{tokens(s.tokens)}</Text>
-                  {s.kind === 'used' && <Text dimColor>{` ${share(s.tokens, r.window)}`}</Text>}
-                </Text>
+          </Box>
+          <Box flexWrap="wrap" columnGap={3}>
+            {r.slices
+              .filter(s => s.kind === 'used')
+              .map(s => (
+                <Box flexShrink={0}>
+                  <Text>
+                    <Text color={s.color}>{'■ '}</Text>
+                    <Text>{`${s.name} `}</Text>
+                    <Text bold>{tokens(s.tokens)}</Text>
+                    <Text dimColor>{` ${share(s.tokens, r.window)}`}</Text>
+                  </Text>
+                </Box>
               ))}
-            </Text>
-          ))}
+          </Box>
         </Box>
         {rest}
       </Box>
@@ -137,48 +144,6 @@ export function toReading(b: {
     percent: b.percentage,
     compactsAt: b.isAutoCompactEnabled ? b.autoCompactThreshold : undefined,
   }
-}
-
-// The bar as runs of cells: each slice gets its share of `width`, a used one at least one cell.
-export function cells(r: Reading, width: number) {
-  const sizes = r.slices.map(s => Math.max(s.kind === 'used' ? 1 : 0, Math.round((s.tokens / r.window) * width)))
-  // Rounding leaves the sum a few cells off: free space takes the difference first, then the largest slices.
-  let diff = width - sizes.reduce((a, n) => a + n, 0)
-  const isUsed = (i: number) => r.slices[i]!.kind === 'used'
-  const order = r.slices.map((_, i) => i).sort((a, b) => Number(isUsed(a)) - Number(isUsed(b)) || sizes[b]! - sizes[a]!)
-  for (const i of order) {
-    if (diff === 0) break
-    const size = Math.max(isUsed(i) ? 1 : 0, sizes[i]! + diff)
-    diff -= size - sizes[i]!
-    sizes[i] = size
-  }
-  return r.slices.map((s, i) => ({ color: s.color, kind: s.kind, text: GLYPH[s.kind].repeat(sizes[i]!) })).filter(c => c.text !== '')
-}
-
-// The legend as shown: free space and the buffer never wrap onto a second line (the header already
-// says what is used and where compaction starts), so the bar keeps one height beside the rings.
-export function lines(r: Reading, width: number) {
-  return legend(r, width)
-    .map((line, i) => (i === 0 ? line : line.filter(s => s.kind === 'used')))
-    .filter(line => line.length > 0)
-}
-
-// The legend, packed into lines no wider than `width`.
-export function legend(r: Reading, width: number) {
-  const lines: Slice[][] = [[]]
-  let used = 0
-  for (const s of r.slices) {
-    const size = 2 + s.name.length + 1 + tokens(s.tokens).length + (s.kind === 'used' ? 1 + share(s.tokens, r.window).length : 0)
-    const line = lines.at(-1)!
-    if (line.length > 0 && used + SPLIT.length + size > width) {
-      lines.push([s])
-      used = size
-    } else {
-      used += (line.length > 0 ? SPLIT.length : 0) + size
-      line.push(s)
-    }
-  }
-  return lines.filter(l => l.length > 0)
 }
 
 export function tokens(n: number) {

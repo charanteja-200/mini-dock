@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { cells, legend, share, toReading, tokens } from '../hooks/register'
+import { share, toReading, tokens } from '../hooks/register'
 
 const BAND = { component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false, maxRows: 20, bodyColumns: 84 } }
 
@@ -66,18 +66,6 @@ describe('context-bar', () => {
     // Every used row has its own color, and none matches free space or the buffer.
     const colors = r.slices.filter(s => s.kind === 'used').map(s => s.color)
     expect(new Set(colors).size).toBe(colors.length)
-    expect(cells(r, 80).find(c => c.kind === 'buffer')?.text).toMatch(/^░+$/)
-    expect(cells(r, 80).find(c => c.kind === 'free')?.text).toMatch(/^ +$/)
-
-    for (const width of [20, 47, 80, 200]) {
-      const bar = cells(r, width)
-      expect(bar.reduce((n, c) => n + c.text.length, 0)).toBe(width) // always exactly the width
-      expect(bar.filter(c => c.kind === 'used').every(c => c.text.length >= 1)).toBe(true) // a small used slice still shows
-    }
-    for (const line of legend(r, 40)) {
-      const size = line.reduce((n, s, i) => n + (i ? 3 : 0) + 2 + s.name.length + 1 + tokens(s.tokens).length + (s.kind === 'used' ? 1 + share(s.tokens, r.window).length : 0), 0)
-      expect(size <= 40 || line.length === 1).toBe(true)
-    }
     expect(toReading({ ...BREAKDOWN, isAutoCompactEnabled: false }).compactsAt).toBeUndefined()
   })
 
@@ -94,6 +82,40 @@ describe('context-bar', () => {
     expect(await band.find({ type: 'Text', text: /^186k$/ })).toBeDefined()
     expect(await band.find({ type: 'Text', text: /mcp tools \(deferred\)/ })).toBeUndefined()
     expect(await band.find({ type: 'Text', text: 'band below' })).toBeDefined() // the band beneath stays
+    // Free space and the buffer have no legend entry; the header says what is used and where compaction starts.
+    expect(await band.find({ type: 'Text', text: /free space|autocompact buffer/ })).toBeUndefined()
+    await band.unmount()
+  })
+
+  // Claude Code no longer lets a hook narrow bodyColumns for the hooks beneath it, so the bar is laid out by
+  // flex in whatever room the pet and the rings leave: its segments grow in proportion to their share of the window.
+  test('the bar lays itself out, whatever the band is told', async ($, on) => {
+    engine(on)
+    await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' } as any)
+    await settle()
+    const grows = async (bodyColumns: number) => {
+      const band = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns } } as any)
+      const segments = (await band.findAll({ type: 'Box' })).filter(b => b.props.width === 0)
+      const bar = { grow: segments.map(b => b.props.flexGrow), min: segments.map(b => b.props.minWidth), glyphs: segments.map(b => b.text.length) }
+      await band.unmount()
+      return bar
+    }
+    const narrow = await grows(60)
+    const wide = await grows(200)
+    expect(narrow.grow).toEqual([34, 120, 26, 1_860, 7_460, 500]) // each one's share of the window in 10,000ths: used rows, free space, the buffer
+    expect(wide.grow).toEqual(narrow.grow) // the proportions never depend on the width
+    expect(narrow.min).toEqual([1, 1, 1, 1, 0, 0]) // a small used row still shows one cell
+    expect(narrow.glyphs).toEqual([60, 60, 60, 60, 0, 60]) // more glyphs than any room, clipped by its box; free space draws none
+    expect(wide.glyphs).toEqual([200, 200, 200, 200, 0, 200])
+  })
+
+  test('a band too narrow for a bar draws nothing of its own', async ($, on) => {
+    engine(on)
+    await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' } as any)
+    await settle()
+    const band = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 20 } } as any)
+    expect(await band.find({ type: 'Text', text: /of 1M/ })).toBeUndefined()
+    expect(await band.find({ type: 'Text', text: 'band below' })).toBeDefined()
     await band.unmount()
   })
 

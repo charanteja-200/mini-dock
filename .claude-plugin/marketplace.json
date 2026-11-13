@@ -20,7 +20,7 @@
     {
       "name": "context-bar",
       "description": "Your context window as a stacked bar above the prompt.",
-      "version": "0.1.2",
+      "version": "0.2.0",
       "source": "./mods/context-bar"
     },
     {
