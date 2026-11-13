@@ -1,4 +1,4 @@
-import { moodOfTool, react, words } from "../src/moods.js";
+import { moodOfTool, react, words } from "./moods.js";
 import { blend, cellsSize, colorOf, draw } from "./sprite.js";
 
 export const crop = cellsSize;

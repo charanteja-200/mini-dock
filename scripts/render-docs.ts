@@ -1,12 +1,12 @@
 // Renders docs/dock.svg and docs/moods.svg from the plugins' own code, so the pictures in the READMEs
-// cannot drift from what the plugins draw: the pet's pixels come from pixel-pet's sprite.js and the rings
-// from status-ring's rings.ts. The context bar is a mock-up with sample numbers.
+// cannot drift from what the dock draws: the pet's pixels come from the dock's pet/sprite.js and the rings
+// from its rings.ts. The context bar is a mock-up with sample numbers.
 //   bun scripts/render-docs.ts
 import { mkdirSync, writeFileSync } from 'node:fs'
 
-import { colorOf, draw } from '../mods/pixel-pet/hooks/sprite.js'
-import { moods, words } from '../mods/pixel-pet/src/moods.js'
-import { rings } from '../mods/status-ring/hooks/rings.ts'
+import { colorOf, draw } from '../mods/dock/hooks/pet/sprite.js'
+import { moods, words } from '../mods/dock/hooks/pet/moods.js'
+import { rings } from '../mods/dock/hooks/rings.ts'
 
 const FONT = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
 const BG = '#141414'

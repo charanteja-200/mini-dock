@@ -1,4 +1,4 @@
-import { mixLch, toHex, toLch } from "../src/color.js";
+import { mixLch, toHex, toLch } from "./color.js";
 
 export const size = { width: 16, height: 7 };
 // true: one sprite pixel is a half block (16 x 4 cells); false: two cells wide, one tall (32 x 7)
