@@ -8,7 +8,7 @@
     {
       "name": "dock",
       "description": "A pixel pet, the context window as a stacked bar and your usage limits as two rings, in one row above the prompt. /dock shows or hides them together or one at a time.",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "source": "./mods/dock"
     }
   ]

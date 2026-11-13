@@ -1,7 +1,7 @@
 // Status ring: how much of my plan limits have I used?
 //   Two rings: the 5-hour window outside, coloured green, amber then rose as it fills; the weekly window
 //   inside, coloured by pace (on track to end the week at or under 98%). Hovering a ring shows its
-//   percentage in the centre, and a small card beside the ring says when that window resets.
+//   percentage in the centre, and a small card beside the ring says when that window resets (the time for the 5-hour ring, the weekday and time for the weekly one).
 //   /status-ring shows or hides it, kept across sessions.
 //   register.tsx draws it in the dock row and calls these; this keeps the readings and answers the command.
 import { atom, read, update } from 'claude-code'
@@ -51,8 +51,8 @@ export async function ringView($: EngineInterface, { Box, Text }: Ui, l: Limits)
   )
   // A card to the left of the ring, shown while the pointer is on that ring: when its window resets. Its width is
   // set from its text and it is placed by a negative left, so it never depends on how wide a renderer lets it grow.
-  const resets = (ring: 'outer' | 'inner', at: number | undefined) => {
-    const when = at === undefined ? undefined : resetLabel(at, now)
+  const resets = (ring: 'outer' | 'inner', at: number | undefined, withDay: boolean) => {
+    const when = at === undefined ? undefined : resetLabel(at, now, withDay)
     const text = `resets ${when}`
     return (
       when && (
@@ -71,8 +71,8 @@ export async function ringView($: EngineInterface, { Box, Text }: Ui, l: Limits)
       ))}
       {centre('outer', l.fiveHour, fillColor(l.fiveHour))}
       {centre('inner', l.weekly, weeklyColor)}
-      {resets('outer', l.fiveHourResetsAt)}
-      {resets('inner', l.weeklyResetsAt)}
+      {resets('outer', l.fiveHourResetsAt, false)}
+      {resets('inner', l.weeklyResetsAt, true)}
     </Box>
   )
 }

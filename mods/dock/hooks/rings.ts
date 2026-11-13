@@ -19,13 +19,16 @@ export function fillColor(percent: number) {
   return percent >= 80 ? '#fb7185' : percent >= 50 ? '#fbbf24' : '#4ade80'
 }
 
-// When a window resets, in the viewer's time: "2:30 PM" if that is today, "Mon 2:30 AM" on another day.
+// When a window resets, in the viewer's time: "2:30 PM", or "4 PM" on the hour; with `withDay`, "Mon 2:30 AM".
 // Undefined once it has passed, when the figures are about to change.
-export function resetLabel(resetsAt: number, now: number) {
+export function resetLabel(resetsAt: number, now: number, withDay = false) {
   if (!(resetsAt > now)) return undefined
   const at = new Date(resetsAt)
-  const time = at.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/ /g, ' ') // newer engines put a narrow space before AM and PM
-  return at.toDateString() === new Date(now).toDateString() ? time : `${at.toLocaleDateString('en-US', { weekday: 'short' })} ${time}`
+  const time = at
+    .toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    .replace(/ /g, ' ') // newer engines put a narrow space before AM and PM
+    .replace(':00', '')
+  return withDay ? `${at.toLocaleDateString('en-US', { weekday: 'short' })} ${time}` : time
 }
 
 const WEEK = 7 * 24 * 60 * 60 * 1000
