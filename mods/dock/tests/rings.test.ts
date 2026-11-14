@@ -1,8 +1,19 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { fillColor, label, paceColor, resetLabel, rings } from '../hooks/rings'
+import { carryOver, fillColor, label, paceColor, resetLabel, rings } from '../hooks/rings'
 
 describe('rings', () => {
+  test('a new session starts from the last reading, with a reset window counted as empty', () => {
+    const last = { fiveHour: 32, fiveHourResetsAt: 5000, weekly: 40, weeklyResetsAt: 90_000 }
+    expect(carryOver(last, 1000)).toEqual(last) // both windows still open: as they were
+    expect(carryOver(last, 6000)).toEqual({ fiveHour: 0, weekly: 40, weeklyResetsAt: 90_000 }) // the 5-hour window has reset since
+    expect(carryOver(last, 95_000)).toEqual({ fiveHour: 0, weekly: 0 }) // and the weekly one
+    expect(carryOver({ fiveHour: 32, weekly: 40 }, 1000)).toBeNull() // no reset times: no telling how old it is
+    expect(carryOver({ fiveHour: 32, fiveHourResetsAt: 5000, weekly: 40 }, 1000)).toBeNull()
+    expect(carryOver(null, 1000)).toBeNull()
+    expect(carryOver(undefined, 1000)).toBeNull()
+  })
+
   test('when a window resets, in local time', () => {
     const at = (day: number, hour: number, minute: number) => new Date(2026, 10, day, hour, minute).getTime() // 13 November 2026 is a Friday, in whatever zone this runs
     const now = at(13, 12, 0)

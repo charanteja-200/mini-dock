@@ -8,7 +8,7 @@ import { atom, read, update } from 'claude-code'
 import type { Elements, EngineInterface, SessionRateLimit } from 'claude-code'
 
 import type { Limits } from '../types'
-import { COLUMNS, ROWS, fillColor, label, paceColor, resetLabel, rings } from './rings'
+import { COLUMNS, ROWS, carryOver, fillColor, label, paceColor, resetLabel, rings } from './rings'
 
 type Ui = Elements['terminal']
 
@@ -23,7 +23,13 @@ export const RING_WIDTH = COLUMNS + GAP // the columns the rings take, their gap
 export async function ringStart($: EngineInterface) {
   const hidden = (await $.store.get('ringHidden').catch(() => undefined)) === true
   await update($, isHidden, () => hidden)
-  void $.session.usage().then(u => ringSave($, u.rateLimits)).catch(() => {})
+  void (async () => {
+    const { rateLimits } = await $.session.usage()
+    if (rateLimits.length > 0) return ringSave($, rateLimits)
+    // Nothing reported yet in this session: start from the last reading, so the rings are there at once.
+    const last = carryOver((await $.store.get('ringLast').catch(() => undefined)) as Limits | undefined, await $.clock.now())
+    if (last) await update($, limits, () => last)
+  })().catch(() => {})
 }
 
 // /status-ring flips it; `on`, `off` set it; `status` only reports (the dock command reads that).
@@ -84,10 +90,12 @@ export async function ringSave($: EngineInterface, windows: SessionRateLimit[]) 
   const fiveHourResetsAt = Date.parse(windows.find(w => w.kind === 'five_hour')?.resetsAt ?? '')
   if (fiveHour === undefined && weekly === undefined) return // off a subscription, or no reading yet
   const resetsAt = week?.resetsAt ? Date.parse(week.resetsAt) : NaN
-  await update($, limits, () => ({
+  const reading: Limits = {
     fiveHour: Math.min(fiveHour ?? 0, 100),
     weekly: Math.min(weekly ?? 0, 100),
     ...(Number.isFinite(fiveHourResetsAt) && { fiveHourResetsAt }),
     ...(Number.isFinite(resetsAt) && { weeklyResetsAt: resetsAt }),
-  }))
+  }
+  await update($, limits, () => reading)
+  await $.store.set('ringLast', reading).catch(() => {}) // kept across sessions, for the start of the next one
 }

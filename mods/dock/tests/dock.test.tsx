@@ -186,6 +186,42 @@ describe('dock: the row', () => {
     await b.unmount()
   })
 
+  test('a fresh session shows the last reading at once, before Claude Code has reported any', async ($, on) => {
+    const last = { fiveHour: 37, fiveHourResetsAt: 1 * DAY + 3_600_000, weekly: 72, weeklyResetsAt: 4 * DAY }
+    engine(on, { rateLimits: [], store: { ringLast: last } })
+    await start($)
+    const b = await $.ui.mount(band(120))
+    expect(await has(b, { type: 'Text', text: '37%' })).toBe(true)
+    expect(await has(b, { type: 'Text', text: '72%' })).toBe(true)
+    await b.unmount()
+  })
+
+  test('a window that has reset since the last reading starts empty', async ($, on) => {
+    const last = { fiveHour: 37, fiveHourResetsAt: 1 * DAY - 3_600_000, weekly: 72, weeklyResetsAt: 4 * DAY } // the 5-hour window reset an hour ago
+    engine(on, { rateLimits: [], store: { ringLast: last } })
+    await start($)
+    const b = await $.ui.mount(band(120))
+    expect(await has(b, { type: 'Text', text: '00%' })).toBe(true)
+    expect(await has(b, { type: 'Text', text: '72%' })).toBe(true)
+    await b.unmount()
+  })
+
+  test('with nothing reported and nothing saved there are no rings', async ($, on) => {
+    engine(on, { rateLimits: [] })
+    await start($)
+    const b = await $.ui.mount(band(120))
+    expect((await rowOf(b))[0].children.length).toBe(2)
+    await b.unmount()
+  })
+
+  test('every reading is saved for the next session', async ($, on) => {
+    const { store } = engine(on, { rateLimits: [{ kind: 'five_hour', percentUsed: 37, resetsAt: new Date(1 * DAY + 3_600_000).toISOString() }, { kind: 'seven_day', percentUsed: 72, resetsAt: new Date(4 * DAY).toISOString() }] })
+    await start($)
+    expect(store.ringLast).toEqual({ fiveHour: 37, fiveHourResetsAt: 1 * DAY + 3_600_000, weekly: 72, weeklyResetsAt: 4 * DAY })
+    await $.session.measure({ context: {}, rateLimits: [{ kind: 'five_hour', percentUsed: 50 }, { kind: 'seven_day', percentUsed: 73 }], changed: ['rateLimits'] } as any)
+    expect((store.ringLast as any).fiveHour).toBe(50)
+  })
+
   test('a new reading of the limits moves the rings', async ($, on) => {
     engine(on)
     await start($)

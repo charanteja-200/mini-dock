@@ -1,3 +1,5 @@
+import type { Limits } from '../types'
+
 // The two rings as braille cells: 5 rows is 20 dots, the circle's diameter. 11 columns, not 10: an odd
 // width has a middle cell, so the 3 characters of the number sit centred on the circle.
 export const COLUMNS = 11
@@ -121,4 +123,17 @@ export function rings(outer: number, inner: number, innerColor = fillColor(inner
     }
     return row
   })
+}
+
+// A new session has no usage reading until Claude Code's first response, so it starts from the last one saved. A window whose
+// reset time has passed has reset, so it counts as empty; with no reset time known there is no telling, so nothing is carried.
+export function carryOver(last: Limits | null | undefined, now: number): Limits | null {
+  if (!last || last.fiveHourResetsAt === undefined || last.weeklyResetsAt === undefined) return null
+  const open = (resetsAt: number) => resetsAt > now
+  return {
+    fiveHour: open(last.fiveHourResetsAt) ? last.fiveHour : 0,
+    weekly: open(last.weeklyResetsAt) ? last.weekly : 0,
+    ...(open(last.fiveHourResetsAt) && { fiveHourResetsAt: last.fiveHourResetsAt }),
+    ...(open(last.weeklyResetsAt) && { weeklyResetsAt: last.weeklyResetsAt }),
+  }
 }
